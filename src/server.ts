@@ -11,7 +11,7 @@ const app: Application = express();
 const port = env.port;
 app.use(express.json());
 app.use(cors({
-    origin: "http://localhost:4200",
+    origin: ["http://localhost:4200", "https://back-lu4k.vercel.app/"],
     credentials: true,
 }))
 
