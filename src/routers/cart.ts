@@ -1,14 +1,15 @@
 import { Router, Request, Response } from "express";
 import {db} from "../db";
 import {filter} from "../config/midware";
+import {BaseResponse} from "../model";
 
 const router = Router();
 
 router.get('/', async (req: Request, res: Response) => {
     try {
-        filter(req, res, payload => {
+        filter(req, res, async payload => {
             const user = payload?.sub;
-            const promise = db.query(`
+            await db.query(`
                 select json_build_object(
                                'id', p.id,
                                'name', p.name,
@@ -23,9 +24,8 @@ router.get('/', async (req: Request, res: Response) => {
                                    on p.id = s.product
                 where "user" = $1 and  c.quantity > 0 and s.bag is null
                 group  by c.id, p.id
-            `, [user]);
-            promise.then(data => {
-                res.status(200).json(data.rows ?? []);
+            `, [user]).then(data => {
+                res.status(200).json(BaseResponse.build(data.rows));
             })
         })
 
@@ -39,11 +39,10 @@ router.get('/', async (req: Request, res: Response) => {
 
 router.post('/add', async (req: Request, res: Response) => {
     try {
-        filter(req, res, payload => {
+        filter(req, res, async payload => {
             const user = payload?.sub;
-            const body = req.body;
-            const replace = req.body.replace ?? false;
-            const promise = db.query(`
+            const {product, quantity, replace} = req.body;
+            await db.query(`
                         INSERT INTO cart ("user", product, quantity)
                         VALUES ($1, $2, $3)
                             ON CONFLICT ON CONSTRAINT "unique"
@@ -52,19 +51,18 @@ router.post('/add', async (req: Request, res: Response) => {
                                    WHEN $4 THEN EXCLUDED.quantity
                                    ELSE cart.quantity + EXCLUDED.quantity
                         END`,
-                [user, body.product, body.quantity, replace]);
-            promise.then(data => {
-                res.status(200).json({
-                    status: "Updated",
-                });
+                [user, product, quantity , replace ?? false])
+                .then(() => {
+                res.status(200)
+                    .json(BaseResponse.success("Item has been added."));
+            }).catch(err => {
+                res.status(200).json(BaseResponse.error(err.message));
             })
         })
 
     } catch (err: any) {
         console.error(err);
-        res.status(500).json({
-            error: err.message,
-        })
+        res.status(500);
     }
 })
 
@@ -78,14 +76,12 @@ router.post('/check-out', async (req: Request, res: Response) => {
             await db.query(`
                     call checkout($1, $2);
                        `,
-                [user, items]).then(data => {
-                res.status(200).json({
-                   message: "Checked out, please exam items in the bag/ purchased.",
-                });
+                [user, items]).then(() => {
+                res.status(200).json(BaseResponse
+                    .success("Checked out!"));
             }).catch(err => {
-                res.status(200).json({
-                    message: err.message,
-                })
+                console.error(err);
+                res.status(200).json(BaseResponse.error(err.message));
             });
         })
     } catch (err: any) {

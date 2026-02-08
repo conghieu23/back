@@ -11,4 +11,10 @@ export const env = {
 
     google_client_id: required("GOOGLE_CLIENT_ID"),
     google_client_secret: required("GOOGLE_CLIENT_SECRET"),
+
+    fpayment_merchant_id: required("FPAYMENT_MERCHANT_ID"),
+    fpayment_secret: required("FPAYMENT_SECRET"),
+
+    gmail_user: required("GMAIL_USER"),
+    gmail_app: required("GMAIL_APP"),
 }

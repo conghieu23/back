@@ -5,6 +5,8 @@ import {env} from "./config/env";
 import product from "./routers/product";
 import cart from "./routers/cart";
 import bag from "./routers/bag";
+import invoice from "./routers/invoice";
+import banner from "./routers/banner";
 
 const app: Application = express();
 
@@ -25,3 +27,5 @@ app.use("/user", user);
 app.use("/product", product);
 app.use("/cart", cart);
 app.use("/bag", bag);
+app.use("/invoice", invoice)
+app.use("/banner", banner);
